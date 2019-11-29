@@ -1,3 +1,6 @@
+把SegmentFault专栏文章导出为Markdown文件的工具。
+
+
 为把博客从SegmentFault迁移到掘金，需要把所有文章导出为Markdown文件，掘金自己有批量导入功能。
 
 使用方法：
