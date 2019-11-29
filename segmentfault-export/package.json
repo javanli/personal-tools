@@ -1,0 +1,18 @@
+{
+  "name": "segmentfault-export",
+  "version": "1.0.0",
+  "description": "",
+  "main": "export.js",
+  "dependencies": {
+    "jsdom": "^15.2.1",
+    "request": "^2.88.0",
+    "turndown": "^5.0.3",
+    "yargs": "^15.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
