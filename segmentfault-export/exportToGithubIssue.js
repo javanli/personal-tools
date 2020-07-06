@@ -5,13 +5,23 @@ const { JSDOM } = jsdom;
 var TurndownService = require('turndown');
 var turndownService = new TurndownService({ codeBlockStyle: 'fenced' });
 var fs = require('fs');
-
+const { head } = require('request');
+console.log('example: node exportToGithubIssue.js --id segmentfault --token xxxxx --user xxx --repo xxx --proxy http://xxx:xxx');
 if (argv.id) {
     globalID = argv.id;
 }
-else {
-    console.log('example: node export.js --id segmentfault');
-    return;
+
+if (argv.token) {
+    token = argv.token;
+}
+if (argv.user) {
+    user = argv.user;
+}
+if (argv.repo) {
+    repo = argv.repo;
+}
+if (argv.proxy) {
+    proxy = argv.proxy;
 }
 turndownService.addRule('img', {
     filter: function (node, options) {
@@ -32,7 +42,25 @@ async function requestAsync(value) {
         })
     })
 }
-
+async function create_issue(title, body, token, user, repo) {
+    let headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${token}`,
+        'User-Agent': 'javanli-blog-export'
+    }
+    let params = {
+        'title': title,
+        'body': body
+    }
+    let res = await requestAsync({
+        headers: headers,
+        method: 'POST',
+        json: params,
+        proxy: proxy ? proxy : '',
+        url: `https://api.github.com/repos/${user}/${repo}/issues`
+    })
+    console.log(res)
+}
 async function main() {
     let articleURLs = [];
 
@@ -46,26 +74,21 @@ async function main() {
         const articleElements = rootPage.window.document.querySelectorAll(".summary .title a");
         currentPageArticles = articleElements.length;
         for (let articleElement of articleElements) {
-            articleURLs.push('https://segmentfault.com/' + articleElement.getAttribute('href'));
+            articleURLs.unshift('https://segmentfault.com/' + articleElement.getAttribute('href'));
         }
         console.log(`page ${page} has ${currentPageArticles} articles`);
         page++;
     }
     while (currentPageArticles > 0);
     var i = 1;
-    if (!fs.existsSync('result')) {
-        fs.mkdirSync('result');
-    }
-    if (!fs.existsSync(`result/${globalID}`)) {
-        fs.mkdirSync(`result/${globalID}`);
-    }
     for (let articleURL of articleURLs) {
         let res = await requestAsync(articleURL);
         const articlePage = new JSDOM(res);
         let title = articlePage.window.document.querySelector("h1.h2 a.text-body").textContent;
-        let contentHTML = articlePage.window.document.querySelector("article.article.fmt.article__content").innerHTML;
+        title = title.replace('/','-');
+        let contentHTML = articlePage.window.document.querySelector("article.article.fmt.article-content").innerHTML;
         let markdown = turndownService.turndown(contentHTML);
-        fs.writeFileSync(`result/${globalID}/${title}.md`, markdown);
+        await create_issue(title,markdown,token,user,repo);
         console.log(`${i}/${articleURLs.length}:${title}`);
         i++;
     }
